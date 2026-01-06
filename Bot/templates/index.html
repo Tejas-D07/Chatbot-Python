@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>✨ ChatBot Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark {
+      background: #121212;
+      color: #f0f0f0;
+    }
+    .chat-container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      width: 95%;
+      max-width: 600px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      color: inherit;
+    }
+    .chat-header {
+      font-size: 1.6em;
+      text-align: center;
+      margin-bottom: 10px;
+      color: inherit;
+    }
+    .toggle-dark {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    .message {
+      display: flex;
+      align-items: flex-start;
+      margin: 10px 0;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.4s ease forwards;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .user {
+      flex-direction: row-reverse;
+    }
+    .user .avatar {
+      margin-left: 10px;
+      margin-right: 0;
+    }
+    .bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .user .bubble {
+      background-color: #007bff;
+      color: white;
+      border-bottom-right-radius: 0;
+    }
+    .bot .bubble {
+      background-color: #f1f1f1;
+      color: #333;
+      border-bottom-left-radius: 0;
+    }
+    body.dark .bot .bubble {
+      background-color: #333;
+      color: #eee;
+    }
+    .input-box {
+      display: flex;
+      margin-top: 10px;
+    }
+    #user-input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      margin-left: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .typing-dots span {
+      display: inline-block;
+      animation: blink 1s infinite;
+      margin-right: 2px;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ccc;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="toggle-dark">
+    <label>
+      <input type="checkbox" id="darkToggle"> 🌙 Dark Mode
+    </label>
+  </div>
+
+  <div class="chat-container">
+    <div class="chat-header">🤖 ChatBot Assistant</div>
+    <div class="chat-box" id="chat-box">
+      <div class="message bot">
+        <img class="avatar" src="https://cdn-icons-png.flaticon.com/512/4712/4712100.png" alt="bot">
+        <div class="bubble">Hi, I am your ChatBot 🤖. </div>
+      </div>
+    </div>
+    <form class="input-box" id="chat-form">
+      <input type="text" id="user-input" placeholder="Ask me something..." autocomplete="off">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("user-input");
+    const chatBox = document.getElementById("chat-box");
+    const darkToggle = document.getElementById("darkToggle");
+
+    const userAvatar = "https://cdn-icons-png.flaticon.com/512/1144/1144760.png";
+    const botAvatar = "https://cdn-icons-png.flaticon.com/512/4712/4712100.png";
+
+    darkToggle.addEventListener("change", () => {
+      document.body.classList.toggle("dark", darkToggle.checked);
+    });
+
+    function createMessage(role, text, isHTML = false) {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `message ${role}`;
+      const avatar = document.createElement("img");
+      avatar.className = "avatar";
+      avatar.src = role === "user" ? userAvatar : botAvatar;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble[isHTML ? "innerHTML" : "textContent"] = text;
+      messageDiv.appendChild(avatar);
+      messageDiv.appendChild(bubble);
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showTypingIndicator(type = "text") {
+      const typingDiv = document.createElement("div");
+      typingDiv.className = "message bot typing";
+      typingDiv.innerHTML = `
+        <img class="avatar" src="${botAvatar}">
+        <div class="bubble">
+          ${type === "image"
+            ? `<div class="spinner"></div>`
+            : `<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>`}
+        </div>`;
+      chatBox.appendChild(typingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return typingDiv;
+    }
+
+    function renderBotReply(reply, typingEl) {
+      typingEl.remove();
+      const messageDiv = document.createElement("div");
+      messageDiv.className = "message bot";
+      const avatar = document.createElement("img");
+      avatar.className = "avatar";
+      avatar.src = botAvatar;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+
+      if (reply.includes("<img")) {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = reply;
+        const img = tempDiv.querySelector("img");
+        if (img) {
+          img.style.opacity = "0";
+          img.onload = () => {
+            img.style.transition = "opacity 0.8s";
+            img.style.opacity = "1";
+            bubble.appendChild(img);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(bubble);
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+          };
+          img.src = img.src;
+        }
+      } else {
+        bubble.innerHTML = reply;
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+
+      createMessage("user", userMessage);
+      input.value = "";
+
+      const isImageRequest = userMessage.toLowerCase().includes("logo") || userMessage.toLowerCase().includes("image");
+      const typingEl = showTypingIndicator(isImageRequest ? "image" : "text");
+
+      try {
+        const res = await fetch("/get", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMessage })
+        });
+        const data = await res.json();
+        renderBotReply(data.reply, typingEl);
+      } catch (error) {
+        typingEl.remove();
+        createMessage("bot", "⚠️ An error occurred while processing your message.");
+        console.error("Error:", error);
+      }
+    });
+  </script>
+</body>
+</html>
